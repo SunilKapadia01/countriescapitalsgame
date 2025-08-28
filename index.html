@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Body Parts Quiz with Timer & Sounds</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background-color: #e6f7ff;
+      text-align: center;
+      padding: 30px;
+      color: #2c3e50;
+    }
+    h1 {
+      color: #0077cc;
+    }
+    .quiz-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .question {
+      font-size: 22px;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    .timer {
+      font-size: 18px;
+      color: #e74c3c;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    button.option-btn {
+      padding: 15px;
+      font-size: 18px;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      background-color: #74b9ff;
+      color: white;
+      transition: 0.3s;
+    }
+    button.option-btn:hover {
+      background-color: #00b4d8;
+    }
+    .feedback {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      height: 30px;
+    }
+    .next-btn {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 18px;
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+    .next-btn:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+    .score {
+      font-size: 20px;
+      color: #e74c3c;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🧠 Body Parts Quiz 🕹️</h1>
+  <p>Answer before the time runs out! Listen for fun sounds! 🔊</p>
+
+  <div class="quiz-container">
+    <div class="timer" id="timer">Time: 15s</div>
+    <div class="question" id="question">Loading question...</div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" disabled>Next Question ➡️</button>
+  </div>
+
+  <div class="score" id="score">Score: 0 / 0</div>
+
+  <!-- Sound Effects (hidden) -->
+  <audio id="tickSound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
+  <audio id="correctSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+  <audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-07.mp3" preload="auto"></audio>
+  <audio id="winSound" src="https://www.soundjay.com/human/sounds/applause-01.mp3" preload="auto"></audio>
+
+  <script>
+    const quizQuestions = [
+      {
+        question: "Which part of your body pumps blood?",
+        options: ["Lungs", "Heart", "Stomach"],
+        correct: 1
+      },
+      {
+        question: "What do you use to see colors and shapes?",
+        options: ["Ears", "Eyes", "Nose"],
+        correct: 1
+      },
+      {
+        question: "Which bone protects your brain?",
+        options: ["Spine", "Rib", "Skull"],
+        correct: 2
+      },
+      {
+        question: "Where does food go after you swallow it?",
+        options: ["Heart", "Lungs", "Stomach"],
+        correct: 2
+      },
+      {
+        question: "Which part carries messages from your brain to your body?",
+        options: ["Spinal Cord", "Liver", "Teeth"],
+        correct: 0
+      },
+      {
+        question: "What do you use to hear music and voices?",
+        options: ["Eyes", "Ears", "Mouth"],
+        correct: 1
+      },
+      {
+        question: "Which organ cleans your blood and makes energy?",
+        options: ["Bladder", "Liver", "Toes"],
+        correct: 1
+      },
+      {
+        question: "Which bone is the longest in your body?",
+        options: ["Femur", "Skull", "Thumb"],
+        correct: 0
+      },
+      {
+        question: "What do your lungs help you do?",
+        options: ["Eat", "Breathe", "Jump"],
+        correct: 1
+      },
+      {
+        question: "Which part of your body helps you balance?",
+        options: ["Hair", "Ears", "Teeth"],
+        correct: 1
+      },
+      {
+        question: "What do you use to taste food?",
+        options: ["Nose", "Tongue", "Fingers"],
+        correct: 1
+      },
+      {
+        question: "Which bones protect your heart and lungs?",
+        options: ["Legs", "Ribs", "Teeth"],
+        correct: 1
+      },
+      {
+        question: "Which part of your body stores pee?",
+        options: ["Stomach", "Bladder", "Brain"],
+        correct: 1
+      },
+      {
+        question: "What connects your head to your body?",
+        options: ["Neck", "Knee", "Foot"],
+        correct: 0
+      },
+      {
+        question: "Which organ helps you think and dream?",
+        options: ["Heart", "Brain", "Liver"],
+        correct: 1
+      }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+    let timeLeft = 15;
+    let timer;
+
+    const questionEl = document.getElementById("question");
+    const optionsEl = document.getElementById("options");
+    const feedbackEl = document.getElementById("feedback");
+    const nextBtn = document.getElementById("next-btn");
+    const scoreEl = document.getElementById("score");
+    const timerEl = document.getElementById("timer");
+
+    const tickSound = document.getElementById("tickSound");
+    const correctSound = document.getElementById("correctSound");
+    const wrongSound = document.getElementById("wrongSound");
+    const winSound = document.getElementById("winSound");
+
+    // Play ticking sound every second
+    function startTimer() {
+      timeLeft = 15;
+      timerEl.textContent = `Time: ${timeLeft}s`;
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = `Time: ${timeLeft}s`;
+        tickSound.currentTime = 0;
+        tickSound.play().catch(e => console.log("Sound play prevented:", e));
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          feedbackEl.textContent = "⏰ Time's up!";
+          feedbackEl.style.color = "#e74c3c";
+          disableOptions();
+          nextBtn.disabled = false;
+        }
+      }, 1000);
+    }
+
+    function disableOptions() {
+      const buttons = document.querySelectorAll(".option-btn");
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+      });
+    }
+
+    function loadQuestion() {
+      const q = quizQuestions[currentQ];
+      questionEl.textContent = q.question;
+      optionsEl.innerHTML = "";
+      feedbackEl.textContent = "";
+      nextBtn.disabled = true;
+
+      q.options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.classList.add("option-btn");
+        button.textContent = option;
+        button.addEventListener("click", () => checkAnswer(index, q.correct));
+        optionsEl.appendChild(button);
+      });
+
+      startTimer();
+    }
+
+    function checkAnswer(selected, correct) {
+      clearInterval(timer);
+      const buttons = document.querySelectorAll(".option-btn");
+      disableOptions();
+
+      if (selected === correct) {
+        feedbackEl.textContent = "🎉 Correct!";
+        feedbackEl.style.color = "#2ecc71";
+        score++;
+        correctSound.play().catch(e => console.log("Sound play prevented:", e));
+      } else {
+        feedbackEl.textContent = "❌ Wrong!";
+        feedbackEl.style.color = "#e74c3c";
+        wrongSound.play().catch(e => console.log("Sound play prevented:", e));
+        buttons[selected].style.backgroundColor = "#e74c3c";
+      }
+      buttons[correct].style.backgroundColor = "#2ecc71";
+
+      nextBtn.disabled = false;
+      scoreEl.textContent = `Score: ${score} / ${currentQ + 1}`;
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentQ++;
+      if (currentQ < quizQuestions.length) {
+        loadQuestion();
+      } else {
+        clearInterval(timer);
+        questionEl.textContent = "🎉 Quiz Complete!";
+        optionsEl.innerHTML = "";
+        feedbackEl.textContent = `You scored ${score} out of ${quizQuestions.length}! Great job!`;
+        feedbackEl.style.color = "#8e44ad";
+        nextBtn.disabled = true;
+        scoreEl.textContent = `Final Score: ${score} / ${quizQuestions.length}`;
+        winSound.play().catch(e => console.log("Win sound play prevented:", e));
+      }
+    });
+
+    // Start the quiz
+    loadQuestion();
+  </script>
+
+</body>
+</html>
